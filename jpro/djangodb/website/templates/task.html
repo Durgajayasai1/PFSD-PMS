@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Task Manager</title>
+<style>
+ @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+body{
+    background:   #002D62;
+}
+
+/* Style the text input */
+#text-name {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 20px;
+  border: none;
+  border-radius: 5px;
+  box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.2);
+  font-size: 16px;
+  line-height: 1.5;
+  color: #333333;
+  background-color: #ffffff;
+  transition: box-shadow 0.2s ease-in-out;
+}
+
+#text-name:focus {
+  outline: none;
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+}
+
+
+/* Style the task list container */
+.task-list-container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #f8f8f8;
+  border-radius: 5px;
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* Style the task input form */
+.task-form {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.task-form input[type="text"] {
+  padding: 10px;
+  border: none;
+  border-radius: 5px;
+  box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.2);
+  flex-grow: 1;
+  margin-right: 10px;
+}
+
+.task-form input[type="submit"] {
+  background-color: #4CAF50;
+  color: white;
+  padding: 10px;
+  border: none;
+  border-radius: 5px;
+  box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+}
+
+/* Style the task list */
+.task-list {
+  list-style: none;
+  padding: 0;
+}
+
+/* Style the task item */
+.task {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #ffffff;
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 5px;
+  box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.2);
+}
+
+/* Style the task name */
+.task-name {
+  flex-grow: 1;
+}
+
+/* Style the task actions */
+.task-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.task-actions button {
+  margin-left: 10px;
+  padding: 5px;
+  border: none;
+  border-radius: 5px;
+  box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+}
+
+.task-actions button.edit {
+  background-color: #2196F3;
+  color: white;
+}
+
+.task-actions button.delete {
+  background-color: #f44336;
+  color: white;
+}
+
+/* Style the edit modal */
+.edit-modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.edit-modal-content {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: #ffffff;
+  padding: 20px;
+  border-radius: 5px;
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+}
+
+.edit-modal-content h2 {
+  margin-top: 0;
+}
+
+.edit-modal-content label {
+  display: block;
+  margin-bottom: 10px;
+}
+
+.edit-modal-content input[type="text"] {
+  padding: 10px;
+  border: none;
+  border-radius: 5px;
+  box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.2);
+width: 100%;
+}
+
+.edit-modal-content button {
+margin-top: 10px;
+padding: 10px;
+border: none;
+border-radius: 5px;
+box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.2);
+cursor: pointer;
+}
+
+.edit-modal-content button.save {
+background-color: #4CAF50;
+color: white;
+}
+
+.edit-modal-content button.cancel {
+background-color: #f44336;
+color: white;
+}
+</style>
+</head>
+<body>
+
+    {% include 'sidebar.html'%}
+
+    <h1 style="text-align: center;">Task Manager</h1><br><br>
+	
+	<form style="position: relative; text-align: center;" method="POST" action="taskcreated">
+		<label for="task-name">Enter a task name:</label>
+		<input type="text" id="task-name" name="task-name">
+		<button type="submit">Add Task</button>
+	</form><br><br>
+
+    <div id="task-list">
+		<!-- Tasks will be added dynamically here -->
+	</div>
+	
+	<!-- Modal for editing a task -->
+	<div id="edit-modal" style="display: none">
+		<h2>Edit Task</h2>
+		<label for="edit-task-name">Task Name:</label>
+		<input type="text" id="edit-task-name" name="edit-task-name">
+		<button id="edit-task-button">Save Changes</button>
+		<button id="cancel-edit-button">Cancel</button>
+	</div>
+	
+	<script>
+		// Array to store the tasks
+		let tasks = [];
+		
+		// Get the task list element
+		const taskList = document.getElementById("task-list");
+		
+		// Function to render the task list
+		function renderTaskList() {
+			// Clear the task list
+			taskList.innerHTML = "";
+			
+			// Loop through the tasks array and create HTML for each task
+			for (let i = 0; i < tasks.length; i++) {
+				const task = tasks[i];
+				
+				// Create the task element
+				const taskElement = document.createElement("div");
+				taskElement.classList.add("task");
+				
+				// Create the task name element
+				const taskNameElement = document.createElement("div");
+				taskNameElement.classList.add("task-name");
+				taskNameElement.textContent = task.name;
+				
+				// Create the task actions element
+				const taskActionsElement = document.createElement("div");
+				taskActionsElement.classList.add("task-actions");
+				
+				// Create the edit button
+				const editButton = document.createElement("button");
+				editButton.textContent = "Edit";
+				editButton.addEventListener("click", function() {
+					// Show the edit modal
+					document.getElementById("edit-modal").style.display = "block";
+					
+					// Populate the edit modal with the task data
+					document.getElementById("edit-task-name").value = task.name;
+					
+					// Save the index of the task being edited
+					document.getElementById("edit-task-button").dataset.index = i;
+				});
+				taskActionsElement.appendChild(editButton);
+				
+				// Create the delete button
+				const deleteButton = document.createElement("button");
+				deleteButton.textContent = "Delete";
+				deleteButton.addEventListener("click", function() {
+					// Remove the task from the tasks array
+                    tasks.splice(i, 1);
+				
+				// Re-render the task list
+				renderTaskList();
+			});
+			taskActionsElement.appendChild(deleteButton);
+			
+			// Add the task name and actions to the task element
+			taskElement.appendChild(taskNameElement);
+			taskElement.appendChild(taskActionsElement);
+			
+			// Add the task element to the task list
+			taskList.appendChild(taskElement);
+		}
+	}
+	
+	// Handle the form submission to add a task
+	document.querySelector("form").addEventListener("submit", function(event) {
+		event.preventDefault();
+		
+		// Get the task name from the form
+		const taskName = document.getElementById("task-name").value;
+		
+		// Create the task object and add it to the tasks array
+		const task = { name: taskName };
+		tasks.push(task);
+		
+		// Re-render the task list
+		renderTaskList();
+		
+		// Clear the form
+		document.getElementById("task-name").value = "";
+	});
+	
+	// Handle the edit modal buttons
+	document.getElementById("edit-task-button").addEventListener("click", function() {
+		// Get the index of the task being edited
+		const index = this.dataset.index;
+		
+		// Update the task name in the tasks array
+		const newTaskName = document.getElementById("edit-task-name").value;
+		tasks[index].name = newTaskName;
+		
+		// Re-render the task list
+		renderTaskList();
+		
+		// Hide the edit modal
+		document.getElementById("edit-modal").style.display = "none";
+	});
+	
+	document.getElementById("cancel-edit-button").addEventListener("click", function() {
+		// Hide the edit modal
+		document.getElementById("edit-modal").style.display = "none";
+	});
+</script>
+</body>
+</html>
